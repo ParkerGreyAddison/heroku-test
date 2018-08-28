@@ -6,4 +6,5 @@ def index():
     return """
 <h1>My working web app</h1>
 <p>If all is right in this world, this should be accessible via a live <b>Heroku hosted url</b>.</p>
+<p>The GitHub repository <i>can</i> be private.</p> 
 """
