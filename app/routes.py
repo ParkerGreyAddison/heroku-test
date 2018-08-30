@@ -1,4 +1,5 @@
 from app import app
+from flask import request
 
 @app.route('/')
 @app.route('/index')
@@ -8,3 +9,11 @@ def index():
 <p>If all is right in this world, this should be accessible via a live <b>Heroku hosted url</b>.</p>
 <p>The GitHub repository <i>can</i> be private.</p> 
 """
+
+@app.route('/request', methods=['GET'])
+def returnjson():
+	zipcode = request.args.get('zip')
+	days = request.args.get('days')
+	budget = request.args.get('budget')
+
+	return flask.jsonify({'zipcode':zipcode, 'days':days, 'budget':budget})
