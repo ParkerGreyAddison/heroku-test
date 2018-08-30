@@ -1,5 +1,6 @@
 from app import app
 from flask import request
+from flask import jsonify
 
 @app.route('/')
 @app.route('/index')
@@ -16,4 +17,4 @@ def returnjson():
 	days = request.args.get('days')
 	budget = request.args.get('budget')
 
-	return flask.jsonify({'zipcode':zipcode, 'days':days, 'budget':budget})
+	return jsonify({'zipcode':zipcode, 'days':days, 'budget':budget})
