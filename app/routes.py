@@ -1,7 +1,7 @@
 from app import app
 from flask import request
 from flask import jsonify
-from test import func
+from app.test import func
 
 @app.route('/')
 @app.route('/index')
