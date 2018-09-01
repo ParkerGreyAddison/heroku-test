@@ -2,6 +2,7 @@ from app import app
 from flask import request
 from flask import jsonify
 from app.test import func
+from script import script
 
 @app.route('/')
 @app.route('/index')
@@ -104,10 +105,18 @@ def returnjson():
 
     return jsonify({'zipcode':zipcode, 'timeframe':timeframe, 'budget':budget})
 
+@app.route('/test', methods=['GET'])
+def runtest():
+    zipcode = request.args.get('zipcode')
+    timeframe = request.args.get('timeframe')
+    budget = request.args.get('budget')
+
+    return func(zipcode, timeframe, budget)
+
 @app.route('/script', methods=['GET'])
 def runscript():
     zipcode = request.args.get('zipcode')
     timeframe = request.args.get('timeframe')
     budget = request.args.get('budget')
 
-    return func(zipcode, timeframe, budget)
+    return jsonify(script(zipcode, timeframe, budget))
