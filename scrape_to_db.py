@@ -51,7 +51,7 @@ to_add.replace('"', "''")
 final_json = "'" + to_add + "'"
 
 # Finally insert zipcode into column 'zipcode' and json into column 'json'
-cur.execute("INSERT INTO scrapes (zipcode, json) VALUES (%s, %s)" % (ZIP, to_add))
+cur.execute("INSERT INTO scrapes (zipcode, json) VALUES (%s, %s)" % (ZIP, final_json))
 
 # Close connection
 conn.commit()
