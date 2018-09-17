@@ -44,6 +44,12 @@ for item in results:
 # Add to table as json dumps
 to_add = json.dumps(data)
 
+#! Not quite ready yet!!!
+    # Need to wrap this string with single quotes, and replace all double quotes with two single quotes
+to_add.replace('"', "''")
+    # Wow that's a line of code I never want to see again
+final_json = "'" + to_add + "'"
+
 # Finally insert zipcode into column 'zipcode' and json into column 'json'
 cur.execute("INSERT INTO scrapes (zipcode, json) VALUES (%s, %s)" % (ZIP, to_add))
 
