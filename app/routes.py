@@ -3,6 +3,8 @@ from flask import request
 from flask import jsonify
 from app.test import func
 from script import script
+import threading
+import time
 
 @app.route('/')
 @app.route('/index')
@@ -120,3 +122,84 @@ def runscript():
     budget = request.args.get('budget')
 
     return jsonify(script(zipcode, timeframe, budget))
+
+@app.route("/slowreq", methods=["GET"])
+def slowrequest():
+    """
+    Testing out a request that takes a long time.  This should start the process
+    on a separate thread whilst returning instructions to poll for the finished
+    results every couple seconds.
+    """
+
+    # VALUE = False
+
+    def lamb():
+        time.sleep(8)
+        return
+
+    # global THREAD
+    THREAD = threading.Thread(target=lamb)
+    THREAD.start()
+
+    #! Alright, good to know:
+        # The thread doesn't transfer over to the requests to /poll... and I
+        # don't think any variable changes would.
+
+
+    # Trying to define the route inside of this function to preserve variables
+    @app.route("/poll")
+    def poll():
+        if THREAD.is_alive():
+            return jsonify({"status":"await"})
+        else:
+            return jsonify({"status":"complete", "value":"done"})
+
+    return """
+    <h1>Currently this result is saying I should poll</h1>
+    <p>So, I'll have some JavaScript that makes a request to /poll every two seconds.</p>
+
+    <script>
+
+        let polling = window.setInterval(function() {
+
+            console.log("polling");
+            
+            const xhr = new XMLHttpRequest();
+            const url = "/poll";
+            xhr.responseType = "json";
+            xhr.open("GET", url);
+            xhr.send();
+            xhr.onreadystatechange = () => {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    console.log(xhr.response);
+                    handleResponse(xhr.response);
+                }
+            };
+        }, 2000);
+
+        function handleResponse(res) {
+            if(!res) {
+                console.log(res.status);
+            }
+            
+            if (res["status"] === "await") {
+                console.log("still awaiting");
+            } else if (res["status"] === "complete") {
+                console.log("result complete");
+                clearInterval(polling);
+                document.body.innerHTML = `
+                <h1>Wow! It's finished!</h1>
+                <p>Your value is <b>${res["value"]}</b>!</p>
+                `;
+            }
+        };
+
+    </script>"""
+
+# VALUE = False
+
+# @app.route("/poll", methods=["POST"])
+# def poll():
+#     if request.args.get("action") == "begin":
+#         global VALUE
+        
