@@ -5,6 +5,128 @@ from app.test import func
 from script import script
 import threading
 import time
+import csv
+from flask import redirect, url_for
+
+
+
+
+@app.route("/a")
+def a_index():
+    return """
+    <h1>Submit this form</h1>
+    <form id="form">
+    <input name="field">
+    <input type="button" onclick="request()">
+    </form>
+
+    <script>
+
+    let field;
+    
+    function request() {
+        const xhr = new XMLHttpRequest();
+        const url = "/areq?";
+        console.log(url);
+        field = document.getElementById("form").elements["field"].value;
+        console.log(field);
+        const endpoint = `${
+            url}value=${
+            field}`;
+        xhr.responseType = "json";
+        xhr.open("GET", endpoint);
+        xhr.send();
+        xhr.onreadystatechange = () => {
+            if (xhr.readyState === XMLHttpRequest.DONE) {
+                handleResponse(xhr.response);
+            }
+        };
+    }
+
+    let polling;
+
+    function handleResponse(res) {
+
+        switch(res["status"]) {
+            case "complete":
+                document.body.innerHTML = `<h1>Wooo!</h1><p>Your value is <b>${res["value"]}</b>.</p>`;
+                clearInterval(polling);
+                break;
+
+            case "poll":
+                document.body.innerHTML = `<h1>Hold on...</h1><p>We're getting your results right now.</p>`;
+                polling = window.setInterval(function() {
+                    console.log("polling");
+                    const xhr = new XMLHttpRequest();
+                    let pollurl = "/apoll?";
+                    let pollendpoint = `${
+                        pollurl}value=${
+                            field}`;
+                    xhr.responseType = "json";
+                    xhr.open("GET", pollendpoint);
+                    xhr.send();
+                    xhr.onreadystatechange = () => {
+                        if (xhr.readyState === XMLHttpRequest.DONE) {
+                            console.log(xhr.response);
+                            handleResponse(xhr.response);
+                        }
+                    };
+                }, 2000);
+                break;
+
+            case "await":
+                document.body.innerHTML = `<h1>Thanks for waiting</h1><p>This will take 40 seconds.</p>`;
+                break;
+        }
+    }
+
+    </script>
+    """
+
+@app.route("/areq", methods=["GET"])
+def areq():
+    # If the value isn't in our values.csv file
+        # then start a thread that will add it to the file (after sleeping)
+        # and respond with instructions to start polling.
+        #
+        # During polling we will just check if our value is in the file yet.
+        # If it is *not* then we get an "await" resonse and try again.
+        # If it *is* then we send the original value again to /areq.
+    value = request.args.get("value")
+
+    if check_value_in_file(value):
+        return jsonify({"status":"complete", "value":value})
+    else:
+        # starting separate thread to add value to file
+        thread = threading.Thread(target=add_value_to_file, args=(value,))
+        thread.start()
+
+        # returning instructions to poll
+        return jsonify({"status":"poll"})
+
+def check_value_in_file(value):
+    print("Checking for", value)
+    with open("values.csv", 'r') as valuesfile:
+        reader = csv.reader(valuesfile)
+        rows = list(reader)
+        values = [value for row in rows for value in row]
+    return value in values
+
+def add_value_to_file(value):
+    print("Will write to file in 40 seconds")
+    time.sleep(40)
+    with open ("values.csv", 'w', newline='') as valuesfile:
+        writer = csv.writer(valuesfile)
+        writer.writerow((value,))
+
+@app.route("/apoll", methods=["GET"])
+def apoll():
+    value = request.args.get("value")
+    
+    if check_value_in_file(value):
+        return redirect("/areq?value=%s" % value)
+    else:
+        return jsonify({"status":"await"})
 
 @app.route('/')
 @app.route('/index')
@@ -154,6 +276,9 @@ def slowrequest():
         else:
             return jsonify({"status":"complete", "value":"done"})
 
+    #! Defining within route causes error when page refreshed, doesn't allow
+        # for multiple definitions of same route.
+
     return """
     <h1>Currently this result is saying I should poll</h1>
     <p>So, I'll have some JavaScript that makes a request to /poll every two seconds.</p>
@@ -202,4 +327,3 @@ def slowrequest():
 # def poll():
 #     if request.args.get("action") == "begin":
 #         global VALUE
-        
