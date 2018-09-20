@@ -1,1 +1,1 @@
-worker: python scrape_to_db.py
+web: gunicorn app:app
