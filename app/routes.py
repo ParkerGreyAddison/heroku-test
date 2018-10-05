@@ -1,4 +1,4 @@
-from app import app
+from app import app, socketio
 from flask import request
 from flask import jsonify
 from app.test import func
@@ -7,8 +7,18 @@ import threading
 import time
 import csv
 from flask import redirect, url_for
+import os
+import psycopg2
 
 
+
+@socketio.on("connect")
+def establish_connection():
+    print("CONNECTING TO POSTGRESQL")
+
+@socketio.on("disconnect")
+def teardown_connection():
+    print("DISCONNECTING FROM POSTGRESQL")
 
 
 @app.route("/a")
@@ -131,6 +141,9 @@ def apoll():
 @app.route('/')
 @app.route('/index')
 def index():
+
+    print("INDEX")
+
     return """
 <h1>My working web app</h1>
 <p>If all is right in this world, this should be accessible via a live <b>Heroku hosted url</b>.</p>
@@ -219,6 +232,15 @@ def index():
         };
 
 </script>
+
+<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.6/socket.io.min.js"></script>
+<script type="text/javascript" charset="utf-8">
+    var socket = io.connect('http://' + document.domain + ':' + location.port);
+    socket.on("connect", function() {
+        socket.emit("my event", {data: "I'm connected!"});
+    });
+</script>
+
 """
 
 @app.route('/request', methods=['GET'])
